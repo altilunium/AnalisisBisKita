@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+
+
+<title>Analisis BusKita</title>
+  <link rel="icon" href="https://storage.googleapis.com/wikibase-cloud-static/sites/530e38a80de265137fa0959f83556801/logos/64.ico?u=1709193904">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map {
+      position:absolute;
+      top:0px;
+      left:0px;
+      width: 100%;
+      height:100%;
+
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-ajax/dist/leaflet.ajax.min.js"></script>
+  <script>
+
+
+
+
+
+
+
+// Function to format the date and time as "YYYY-MM-DD HH:mm:ss"
+function formatDate(date) {
+  var year = date.getFullYear();
+  var month = padZero(date.getMonth() + 1);
+  var day = padZero(date.getDate());
+  var hours = padZero(date.getHours());
+  var minutes = padZero(date.getMinutes());
+  var seconds = padZero(date.getSeconds());
+
+  return year + "-" + month + "-" + day + " " + hours + ":" + minutes + ":" + seconds;
+}
+
+// Function to pad a number with leading zeros if necessary
+function padZero(num) {
+  return num.toString().padStart(2, "0");
+}
+
+
+
+
+    // Initialize the map
+    var map = L.map('map').setView([-6.2870,106.9979], 13);
+
+    // Create the tile layer with OpenStreetMap data
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> | Data kecepatan BusKita diambil berdasarkan GPS tracking pada tanggal 4 Maret 2024 (11.26 dari halte Samedja Ahmad Yani - 12.28 di halte terakhir Vida). Klik titik berwarna untuk informasi tambahan.'
+    }).addTo(map);
+
+    // Load and display the GeoJSON data
+    var geojsonLayer = new L.GeoJSON.AJAX("improved.geojson", {
+      pointToLayer: function(feature, latlng) {
+        // Get the "AverageSpe" value and calculate the color
+        var speed = feature.properties.AverageSpe;
+        var color = getColor(speed);
+
+        // Create a colored circle marker
+        return L.circleMarker(latlng, {
+          radius: 10, // Adjust the radius as needed
+          fillColor: color,
+          color: '#000',
+          weight: 1,
+          opacity: 0,
+          fillOpacity: 1,
+        });
+      },
+      onEachFeature: function(feature, layer) {
+        // Bind a popup with point properties
+        var popupContent = '';
+        var cc = 0
+        for (var property in feature.properties) {
+          if (cc == 0){
+            popupContent += '<b>Kecepatan:</b> ' + feature.properties[property].toFixed(2) + ' km/jam <br>';
+            cc = cc + 1
+          }
+          else {
+            
+var dateObj = new Date(feature.properties[property]);
+
+// Add 7 hours to the date object
+dateObj.setHours(dateObj.getHours() + 7);
+
+// Format the modified date and time
+var modifiedDateTime = formatDate(dateObj);
+
+
+
+            popupContent += '<b>Waktu GPS tracking :</b> ' + modifiedDateTime + '<br>';
+          }
+          
+        }
+        layer.bindPopup(popupContent);
+      }
+    }).addTo(map);
+
+    // Define the color gradient based on speed
+   // Define the color gradient based on speed
+function getColor(speed) {
+  var maxSpeed = 37; // Maximum speed value
+  var minHue = 240; // Hue for slow speeds (blue)
+  var maxHue = 0; // Hue for high speeds (red)
+  
+  // Calculate the hue value based on the speed
+  var hue = ((speed - 0) / (maxSpeed - 0)) * (maxHue - minHue) + minHue;
+  
+  return 'hsl(' + hue + ', 100%, 50%)';
+}
+  </script>
+</body>
+</html>
